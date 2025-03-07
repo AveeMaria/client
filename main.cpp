@@ -13,6 +13,7 @@ void draw(SDL_Rect* r) {
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillRect(renderer, r);
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
     SDL_RenderPresent(renderer);
 }
 
@@ -35,9 +36,11 @@ int main() {
 	}
 
 	
-	//Comms comms("127.0.0.1", (Uint16)12345);
-	Comms comms("192.168.0.24", (Uint16)12345);
-	
+	Comms comms("127.0.0.1", (Uint16)123456);
+	//Comms comms("84.20.249.112", (Uint16)12345);
+	//Comms comms("192.168.0.24", (Uint16)12345);
+
+
 	int x = 19;
 	float y = 5.6f;
 	Coords c = { 100, 50 };
@@ -46,7 +49,21 @@ int main() {
 
 	UDPpacket* r;
 	r = SDLNet_AllocPacket(512);
+	
+	if (comms.send(69)) {
+		std::cout << "OK: sent\n";
+	}
 	while (true) {
+		
+	}
+
+
+	while (true) {
+
+		if (comms.send(69)) {
+			std::cout << "OK: sent\n";
+		}
+
 		for (auto& e : entities) {
 			draw(&player);
 			e.print();
