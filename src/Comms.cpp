@@ -6,6 +6,7 @@ Comms::Comms()
     port = 12345;
     resolveHost();
     openSocket();
+    //allocPacket(&recvPacket, nullptr, 512);
 }
 
 Comms::Comms(const char* h, Uint16 p)
@@ -14,6 +15,7 @@ Comms::Comms(const char* h, Uint16 p)
     port = p;
     resolveHost();
     openSocket();
+    //allocEmptyPacket(&recvPacket, 256);
 }
 
 Comms::~Comms()
@@ -80,9 +82,10 @@ bool Comms::stupidSend(Uint8* data, size_t size) const {
 
     if (SDLNet_UDP_Send(sock, -1, sendPacket) < 1) {
         std::cerr << "ERROR: SDLNet_UDP_Send error: " << SDLNet_GetError() << "\n";
+        SDLNet_FreePacket(sendPacket);
         return false;
     }
-
+    SDLNet_FreePacket(sendPacket);
     std::cout << "OK: poslan paket.\n";
     return true;
 }
@@ -95,7 +98,7 @@ bool Comms::allocPacket(UDPpacket** packet, const Uint8* data, int size) const {
         return false;
     }
 
-    std::memcpy((*packet)->data, data, size);
+    std::memcpy((*packet)->data, data, size);//nepotrebno?
     (*packet)->len = size;
 
     std::cout << "OK: Packet allocated.\n";
@@ -110,11 +113,10 @@ bool Comms::allocEmptyPacket(UDPpacket** packet, int size) const {
         return false;
     }
 
-    std::cout << "OK: Packet allocated.\n";
+    //std::cout << "OK: Packet allocated.\n";
     return true;
 }
 
-//sta reci?
 /*
 using ReturnType = std::variant<int, float, std::string, Coords>;
 ReturnType myFunction(Uint32 option) {
@@ -130,53 +132,62 @@ ReturnType myFunction(Uint32 option) {
     else {
         return Coords{ 1, 2 };
     }
-}
-*/
+}*/
 
 /////////////////
 //  recive del //
 /////////////////
 
-bool Comms::recieve(UDPpacket** p)
-{
-    int packetsReceived = 0;
-
-    // Keep receiving packets while available
-    while (SDLNet_UDP_Recv(sock, *p)) {
-        size_t size = (*p)->len;
-        printBytes(reinterpret_cast<char*>((*p)->data), size);
-        packetsReceived++;
-    }
-
-    return packetsReceived > 0;
-}
-
 bool Comms::recieve()
 {
     UDPpacket* recvPacket;
     if (!allocEmptyPacket(&recvPacket, 256)) {
+        std::cerr << "ERROR: Failed to allocate memory for the packet." << std::endl;
+        return false;
+    }
+
+    if (SDLNet_UDP_Recv(sock, recvPacket) <= 0) {
         SDLNet_FreePacket(recvPacket);
         return false;
     }
 
-    int packetsReceived = 0;
+    size_t size = recvPacket->len;
+    printBytes(reinterpret_cast<char*>(recvPacket->data), size);
 
-    // Keep receiving packets while available
-    while (SDLNet_UDP_Recv(sock, recvPacket)) {
-        size_t size = recvPacket->len;
-        printBytes(reinterpret_cast<char*>(recvPacket->data), size);
-        packetsReceived++;
-    }
+    std::cout << "Received packet from: " << SDLNet_ResolveIP(&recvPacket->address) << "\n";
 
+    std::cout << reinterpret_cast<char*>(recvPacket->data) << "\n";
 
-    PacketType type = static_cast<PacketType>(recvPacket->data[0]);
-    switch (type) {
-    case PacketType::ENTITYPOS:
-
-        std::cout << "enttiy pos recieved";
-    }
-
-    memset(recvPacket->data, 0, recvPacket->len);
     SDLNet_FreePacket(recvPacket);
-    return packetsReceived > 0;
+
+    return true;
+}
+
+
+
+bool Comms::recieve(UDPpacket** recvPacket)
+{
+    if (!allocEmptyPacket(&(*recvPacket), 256)) {
+        std::cerr << "ERROR: Failed to allocate memory for the packet." << std::endl;
+        return false;
+    }
+
+    if (SDLNet_UDP_Recv(sock, *recvPacket) <= 0) {
+        SDLNet_FreePacket(*recvPacket);
+        return false;
+    }
+
+    //    size_t size = recvPacket->len;
+    size_t size = (*recvPacket)->len;
+
+    //dont delete, samo za debugat
+    //printBytes(reinterpret_cast<char*>((*recvPacket)->data), size);
+
+    std::cout << "Received packet from: " << SDLNet_ResolveIP(&(*recvPacket)->address) << "\n";
+
+    std::cout << reinterpret_cast<char*>((*recvPacket)->data) << "\n";
+
+    SDLNet_FreePacket((*recvPacket));
+
+    return true;
 }

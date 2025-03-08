@@ -1,11 +1,8 @@
 ﻿#include "include/Comms.hpp"
 #include "include/Utils.hpp"
+#include "include/PacketType.hpp"
 
-#include <vector>
 SDL_Renderer* renderer = nullptr;
-SDL_Window* window;
-SDL_Rect player{ 0,0,100,100 };
-std::vector<entity> entities;
 
 void draw(SDL_Rect* r) {
 	SDL_RenderClear(renderer);
@@ -18,6 +15,8 @@ void draw(SDL_Rect* r) {
 }
 
 int main() {
+	SDL_Window* window;
+
 	if (SDLNet_Init() < 0) {
 		std::cerr << "ERROR: SDLNet_Init failed: " << SDLNet_GetError() << "\n";
 		SDL_Quit();
@@ -41,105 +40,50 @@ int main() {
 	//Comms comms("192.168.0.24", (Uint16)12345);
 
 
-	int x = 19;
-	float y = 5.6f;
-	Coords c = { 100, 50 };
-	std::string s;
-	entities.push_back({ 15, {0,0} });
-
-	UDPpacket* r;
-	r = SDLNet_AllocPacket(512);
 	
-	if (comms.send(69)) {
-		std::cout << "OK: sent\n";
+	
+	if (comms.send(SYN { SDL_GetTicks()})) {
+		std::cout << "connecting to server..\n";
 	}
+	
 	while (true) {
-		
-	}
+		UDPpacket* recvPacket;
+		if (comms.recieve(&recvPacket)) {
+			printBytes(reinterpret_cast<char*>(recvPacket->data), recvPacket->len);
 
+			///PREVER KER PACKET JE PO PRVEM BYTU
 
-	while (true) {
+			switch ((Uint8)recvPacket->data[0]) {
+			case 0:
+				std::cout << "type: PING\n";
+				break;
+			case 5:
+				std::cout << "type: PONG\n";
+				break;
+				///////
+			case 10:
+				std::cout << "type: SYN\n";//TEGA CLIENT NE SPREJEMA KER POSLJE
+				break;
+			case 15:
+				std::cout << "type: SYN_ACK\n";
 
-		if (comms.send(69)) {
-			std::cout << "OK: sent\n";
-		}
-
-		for (auto& e : entities) {
-			draw(&player);
-			e.print();
-		}
-		
-		if (comms.recieve(&r)) {
-			std::cout << "OK: recieved\n";
-
-			if (static_cast<PacketType>(r->data[0]) == PacketType::ENTITYPOS) {
-				std::cout << "recieved entity pos\n";
-
-				int id;
-				memcpy(&id, r->data + 1, sizeof(id));
-				Coords c;
-
-				//offsetamo za 1(type) + 4 (id)
-				memcpy(&c, r->data + 1 + sizeof(id), sizeof(c));
-
-				std::cout << "\nID: " << id<<"\n";
-
-				for (auto& e : entities) {
-                    if (e.id == id) {
-						e.update(c);//da entityju te coordse
-						player.x = e.c.x;
-						player.y = e.c.y;
-						//e.c = c;
-						break;
-					}
+				if (!comms.stack_send( ACK{ SDL_GetTicks() }, recvPacket->address)) {
+					std::cerr << "ERROR: ACK not sent.\n";
 				}
-				//break;
+
+				break;
+
+			case 20:
+				std::cout << "type: ACK\n";//TEGA CLIENT NE SPREJEMA KER POSLJE
+				break;
+				///////
+			case 40:
+				std::cout << "type: ENTITY_POS\n";
+				break;
+			default:
+				std::cout << "Unknown packet type.\n";
+				break;
 			}
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
-	SDLNet_FreePacket(r);
-	
-	for (auto& e : entities) {
-		e.print();
-	}
-	
-
-	/*
-	if (comms.send(c)) {
-		std::cout << "OK: sent\n";
-	}
-	else {
-		std::cout << "ERROR: not sent\n";
-	}*/
-
-	/*
-	if (comms.recieve()) {
-		std::cout << "OK: recieved\n";
-	}
-	else {
-		std::cout << "OK: not recieved\n";
-	}
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-
-	if (comms.send(y)) {
-		std::cout << "OK: sent\n";
-	}
-	else {
-		std::cout << "ERROR: not sent\n";
-	}
-
-
-	if (comms.recieve()) {
-		std::cout << "OK: recieved\n";
-	}
-	else {
-		std::cout << "OK: not recieved\n";
-	}
-	*/
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(25000));
-	return 0;
 }
