@@ -7,6 +7,7 @@ Comms::Comms()
     resolveHost();
     openSocket();
     //allocPacket(&recvPacket, nullptr, 512);
+    std::cout << "----------------------------------\n";
 }
 
 Comms::Comms(const char* h, Uint16 p)
@@ -16,6 +17,7 @@ Comms::Comms(const char* h, Uint16 p)
     resolveHost();
     openSocket();
     //allocEmptyPacket(&recvPacket, 256);
+    std::cout << "----------------------------------\n";
 }
 
 Comms::~Comms()
@@ -101,7 +103,7 @@ bool Comms::allocPacket(UDPpacket** packet, const Uint8* data, int size) const {
     std::memcpy((*packet)->data, data, size);//nepotrebno?
     (*packet)->len = size;
 
-    std::cout << "OK: Packet allocated.\n";
+    //std::cout << "OK: Packet allocated.\n";
     return true;
 }
 

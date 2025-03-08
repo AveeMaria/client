@@ -35,13 +35,13 @@ int main() {
 	}
 
 	
-	//Comms comms("127.0.0.1", (Uint16)123456);
+	Comms comms("127.0.0.1", (Uint16)123456);
 	//Comms comms("84.20.249.112", (Uint16)12345);
-	Comms comms("192.168.0.24", (Uint16)12345);
+	//Comms comms("192.168.0.24", (Uint16)12345);
 
 
-	if (comms.send(SYN { SDL_GetTicks()})) {
-		std::cout << "SYN SENT\n----------------------------------\n";
+	if (comms.stack_send(SYN { SDL_GetTicks()})) {
+		std::cout << "SYN SENT\n";
 	}
 	
 	while (true) {
