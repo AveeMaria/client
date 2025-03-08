@@ -35,20 +35,22 @@ int main() {
 	}
 
 	
-	Comms comms("127.0.0.1", (Uint16)123456);
+	//Comms comms("127.0.0.1", (Uint16)123456);
 	//Comms comms("84.20.249.112", (Uint16)12345);
-	//Comms comms("192.168.0.24", (Uint16)12345);
+	Comms comms("192.168.0.24", (Uint16)12345);
 
 
-	
-	
 	if (comms.send(SYN { SDL_GetTicks()})) {
-		std::cout << "connecting to server..\n";
+		std::cout << "SYN SENT\n----------------------------------\n";
 	}
 	
 	while (true) {
 		UDPpacket* recvPacket;
 		if (comms.recieve(&recvPacket)) {
+			if (recvPacket->len == 0) {
+				std::cout << "ERROR: EMPTY PACKET";
+				continue;
+			}
 			printBytes(reinterpret_cast<char*>(recvPacket->data), recvPacket->len);
 
 			///PREVER KER PACKET JE PO PRVEM BYTU
@@ -61,10 +63,10 @@ int main() {
 				std::cout << "type: PONG\n";
 				break;
 				///////
-			case 10:
-				std::cout << "type: SYN\n";//TEGA CLIENT NE SPREJEMA KER POSLJE
+			case (int)PacketType::SYN:
+				std::cout << "ERROR: type: SYN\n";//TEGA CLIENT NE SPREJEMA KER POSLJE
 				break;
-			case 15:
+			case (int)PacketType::SYN_ACK:
 				std::cout << "type: SYN_ACK\n";
 
 				if (!comms.stack_send( ACK{ SDL_GetTicks() }, recvPacket->address)) {
@@ -73,8 +75,8 @@ int main() {
 
 				break;
 
-			case 20:
-				std::cout << "type: ACK\n";//TEGA CLIENT NE SPREJEMA KER POSLJE
+			case (int)PacketType::ACK:
+				std::cout << "ERROR: type: ACK\n";//TEGA CLIENT NE SPREJEMA KER POSLJE
 				break;
 				///////
 			case 40:

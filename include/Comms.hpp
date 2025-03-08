@@ -112,6 +112,10 @@ bool Comms::stack_send(T data) {
     sendPacket->address.host = ip.host;
     sendPacket->address.port = ip.port;
 
+    if (sendPacket->len == 0) {
+        sendPacket->len = (sizeof(T) + 1);
+    }
+
     sendPacket->data[0] = type;
     std::memcpy(&sendPacket->data[1], &data, sizeof(T));
     printBytes(reinterpret_cast<char*>(sendPacket->data), sizeof(T) + 1);
@@ -138,6 +142,10 @@ bool Comms::stack_send(T data, IPaddress _ip) {
 
     sendPacket->address.host = _ip.host;
     sendPacket->address.port = _ip.port;
+
+    if (sendPacket->len == 0) {
+        sendPacket->len = (sizeof(T) + 1);
+    }
 
     sendPacket->data[0] = type;
     std::memcpy(&sendPacket->data[1], &data, sizeof(T));

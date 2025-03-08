@@ -49,4 +49,4 @@ struct SYN_ACK {
 
 struct ACK {
 	Uint32 time;
-};;
+};
